@@ -1,0 +1,17 @@
+{
+  "name": "laracap-admin",
+  "version": "0.0.0-spec",
+  "private": true,
+  "description": "LaraCap OTA admin + API — Nuxt full-stack on Cloudflare. See docs/ for rebuild specification.",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=20"
+  }
+}

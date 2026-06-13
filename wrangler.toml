@@ -1,0 +1,31 @@
+# LaraCap Admin — Cloudflare bindings stub
+# See docs/09-cloudflare-architecture.md
+
+name = "laracap-admin"
+compatibility_date = "2024-11-01"
+main = ".output/server/index.mjs"
+
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "laracap"
+# database_id = "<create-with-wrangler-d1-create>"
+
+# [[r2_buckets]]
+# binding = "BUNDLES"
+# bucket_name = "laracap-bundles"
+
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "<create-with-wrangler-kv-namespace-create>"
+
+# [[queues.producers]]
+# binding = "DEVICE_QUEUE"
+# queue = "device-tracking"
+
+# [[queues.consumers]]
+# queue = "device-tracking"
+# max_batch_size = 10
+# max_batch_timeout = 30
+
+[vars]
+# NUXT_PUBLIC_APP_URL = "https://laracap.example.com"
