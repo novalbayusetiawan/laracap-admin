@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+
+# Nuxt / Nitro build output
+.nuxt
+.output
+.data
+dist
+
+# Cloudflare / Wrangler
+.wrangler
+.dev.vars
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Local D1 / Miniflare state
+.mf
+
+# Logs & OS
+*.log
+.DS_Store

@@ -1,16 +1,45 @@
 {
   "name": "laracap-admin",
-  "version": "0.0.0-spec",
+  "version": "0.1.0",
   "private": true,
-  "description": "LaraCap OTA admin + API — Nuxt full-stack on Cloudflare. See docs/ for rebuild specification.",
+  "type": "module",
+  "description": "LaraCap OTA admin + API — Nuxt 4 full-stack on Cloudflare. Strict API compat with cap-update v8.x and laracap-cli v1.x.",
   "scripts": {
     "dev": "nuxt dev",
     "build": "nuxt build",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply laracap --local",
+    "db:migrate:remote": "wrangler d1 migrations apply laracap --remote",
+    "deploy": "nuxt build && wrangler deploy"
   },
-  "dependencies": {},
-  "devDependencies": {},
+  "dependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "bcryptjs": "^3.0.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
+    "lucide-vue-next": "^1.0.0",
+    "nuxt": "^4.5.0",
+    "nuxt-auth-utils": "^0.5.29",
+    "reka-ui": "^2.10.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.3",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.18.8",
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "drizzle-kit": "^0.31.10",
+    "nitro-cloudflare-dev": "^0.2.2",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.114.0"
+  },
   "engines": {
     "node": ">=20"
   }

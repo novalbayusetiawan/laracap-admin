@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "laracap-admin",
+  "compatibility_date": "2025-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": ".output/server/index.mjs",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".output/public"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "routes": [
+    {
+      "pattern": "laracap.novals.dev",
+      "custom_domain": true
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "laracap-db",
+      "database_id": "8ee5b415-b9a8-4995-9f09-cf7fa7b15486",
+      "migrations_dir": "server/database/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUNDLES",
+      "bucket_name": "laracap-bundles"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "CACHE",
+      "id": "6a77392515da4e57813f9631afc069ab"
+    }
+  ],
+  "vars": {
+    "NUXT_PUBLIC_APP_URL": "https://laracap.novals.dev"
+  }
+}
