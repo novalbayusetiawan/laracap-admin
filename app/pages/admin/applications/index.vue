@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Check, Copy, Pencil, Plus, Trash2 } from 'lucide-vue-next'
+import { Check, Copy, Download, Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { useToast } from '~/composables/useToast'
+import { useOtaLinks } from '~/composables/useOtaLinks'
 
 definePageMeta({ middleware: 'admin-auth', layout: 'admin' })
 
 const { data: apps, refresh } = await useFetch('/api/admin/applications')
 const { success, error: toastError } = useToast()
+const { downloadLink } = useOtaLinks()
 
 // ----- create -----
 const showCreate = ref(false)
@@ -109,7 +111,7 @@ async function copyUuid(uuid: string) {
         <tbody>
           <tr v-for="app in apps" :key="app.id" class="border-b last:border-0 hover:bg-muted/30">
             <td class="px-4 py-3">
-              <div class="font-medium">{{ app.name }}</div>
+              <NuxtLink :to="`/admin/applications/${app.id}`" class="font-medium hover:underline">{{ app.name }}</NuxtLink>
               <div v-if="app.description" class="max-w-[28ch] truncate text-xs text-muted-foreground">{{ app.description }}</div>
             </td>
             <td class="px-4 py-3">
@@ -131,6 +133,14 @@ async function copyUuid(uuid: string) {
             <td class="px-4 py-3"><UiBadge variant="success">{{ app.channels_count }}</UiBadge></td>
             <td class="px-4 py-3">
               <div class="flex justify-end gap-1">
+                <a
+                  v-if="app.bundles_count > 0"
+                  :href="downloadLink(app.uuid)"
+                  title="Download latest bundle (production channel)"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-sm hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Download class="h-4 w-4" />
+                </a>
                 <UiButton variant="ghost" size="icon" title="Edit" @click="openEdit(app)">
                   <Pencil class="h-4 w-4" />
                 </UiButton>

@@ -37,6 +37,10 @@ Self-hosted Capacitor OTA server rebuild: **Laravel 12 + Filament v4** → **Nux
 13. [12-business-rules-and-quirks.md](./12-business-rules-and-quirks.md) — Rules, edge cases, bugs
 14. [13-implementation-status.md](./13-implementation-status.md) — ✅ **What was actually built** (source of truth for the shipped system)
 15. [adr/](./adr/) — Architecture Decision Records
+    - [001-cloudflare-architecture.md](./adr/001-cloudflare-architecture.md) — Workers + D1 + R2 + KV
+    - [002-r2-bundle-storage.md](./adr/002-r2-bundle-storage.md) — R2 for bundle ZIPs
+    - [003-d1-schema.md](./adr/003-d1-schema.md) — D1 schema design
+    - [004-vps-portability.md](./adr/004-vps-portability.md) — Optional VPS/aaPanel backend (deferred)
 
 ## Glossary
 
