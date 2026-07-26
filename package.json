@@ -12,10 +12,12 @@
     "typecheck": "nuxt typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "wrangler d1 migrations apply laracap --local",
-    "db:migrate:remote": "wrangler d1 migrations apply laracap --remote",
-    "deploy": "nuxt build && wrangler deploy"
+    "db:migrate:local": "wrangler d1 migrations apply laracap-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply laracap-db --remote",
+    "deploy": "nuxt build && wrangler deploy --cwd .output"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -33,8 +35,9 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.18.8",
     "@cloudflare/workers-types": "^4.20260101.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^13.0.1",
     "drizzle-kit": "^0.31.10",
     "nitro-cloudflare-dev": "^0.2.2",
     "vitest": "^4.1.0",

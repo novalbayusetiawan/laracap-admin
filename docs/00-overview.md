@@ -62,7 +62,7 @@ flowchart LR
 |------|--------|
 | Framework | Nuxt 4 full-stack |
 | Admin UI | shadcn-vue + Tailwind |
-| Deployment | Cloudflare Pages + Workers (free tier) |
+| Deployment | Cloudflare Workers + Static Assets (single Worker, free tier) |
 | Database | D1 (SQLite-compatible) |
 | Storage | R2 for bundle ZIPs |
 | API compat | **Strict** — no breaking changes for cap-update / laracap-cli |

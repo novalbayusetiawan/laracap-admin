@@ -1,5 +1,11 @@
 # LaraCap Admin — Rebuild Plan
 
+> **Status: ✅ Implemented and live at https://laracap.novals.dev**
+> This file is the original rebuild plan/spec index. For what was *actually built*
+> and every deviation from the spec below, see
+> **[docs/13-implementation-status.md](./docs/13-implementation-status.md)** — that
+> file is the source of truth for the shipped system.
+
 This file summarizes the rebuild specification. **Full specs live in [`docs/`](./docs/).**
 
 ## Goal

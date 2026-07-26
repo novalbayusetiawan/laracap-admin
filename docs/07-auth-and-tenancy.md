@@ -9,6 +9,12 @@ compatibility: strict
 
 # Auth and Tenancy
 
+> **Implementation note:** the admin session layer shipped with **`nuxt-auth-utils`**
+> (sealed cookies), not Lucia. CLI/OTA uses Sanctum-compatible bearer tokens; `bcryptjs`
+> for hashes. A **superadmin** role, a registration-lockdown **setting**, and
+> **impersonation** were added beyond this spec. See
+> [13-implementation-status.md](./13-implementation-status.md#3-auth-nuxt-auth-utils-not-lucia).
+
 LaraCap uses **two separate auth systems** plus public OTA endpoints. No Laravel Policies — authorization is inline checks and query scoping.
 
 ## Auth Systems Overview

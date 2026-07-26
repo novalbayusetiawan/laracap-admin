@@ -35,7 +35,8 @@ Self-hosted Capacitor OTA server rebuild: **Laravel 12 + Filament v4** → **Nux
 11. [10-migration-from-laravel.md](./10-migration-from-laravel.md) — Migration guide
 12. [11-test-matrix.md](./11-test-matrix.md) — Test coverage requirements
 13. [12-business-rules-and-quirks.md](./12-business-rules-and-quirks.md) — Rules, edge cases, bugs
-14. [adr/](./adr/) — Architecture Decision Records
+14. [13-implementation-status.md](./13-implementation-status.md) — ✅ **What was actually built** (source of truth for the shipped system)
+15. [adr/](./adr/) — Architecture Decision Records
 
 ## Glossary
 

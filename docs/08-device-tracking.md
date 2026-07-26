@@ -9,6 +9,11 @@ compatibility: strict
 
 # Device Tracking
 
+> **Implementation note:** this spec describes a Laravel-style queued `TrackDeviceJob`
+> (Cloudflare Queues). The shipped system uses **`event.waitUntil()`** instead (Queues is
+> paid; free-tier target). Same non-blocking outcome. See
+> [13-implementation-status.md](./13-implementation-status.md#1-device-tracking-waituntil-not-cloudflare-queues).
+
 Automatic fleet analytics when Capacitor devices check for updates or download bundles.
 
 ## Trigger Conditions

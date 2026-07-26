@@ -21,6 +21,32 @@ class UploadError extends Error {
   }
 }
 
+/**
+ * Resolve a channel by name within an app, creating it if absent.
+ * Note: (application_id, name) is intentionally NOT unique (legacy quirk), so
+ * this is select-then-insert; a rare concurrent double-create is tolerable and
+ * harmless (OTA resolution picks the newest compatible bundle regardless).
+ */
+export async function resolveOrCreateChannelByName(
+  db: Database,
+  applicationId: number,
+  name: string,
+): Promise<number> {
+  const [existing] = await db
+    .select({ id: channels.id })
+    .from(channels)
+    .where(and(eq(channels.name, name), eq(channels.applicationId, applicationId)))
+    .limit(1)
+  if (existing) return existing.id
+
+  const nowIso = new Date().toISOString()
+  const [created] = await db
+    .insert(channels)
+    .values({ uuid: crypto.randomUUID(), name, applicationId, createdAt: nowIso, updatedAt: nowIso })
+    .returning({ id: channels.id })
+  return created!.id
+}
+
 export async function createBundle(
   db: Database,
   r2: R2Bucket,
@@ -41,24 +67,25 @@ export async function createBundle(
     throw new UploadError(422, 'The ios_min_version_code must be less than or equal to ios_max_version_code.')
   }
 
-  // Channel: CLI sends a name ("channel"), admin UI sends an id ("channel_id"); both scoped to the app.
+  // Channel: CLI sends a name ("channel"), admin UI sends an id ("channel_id").
+  // Both scoped to the app. For the name path (CLI), auto-create the channel if it
+  // doesn't exist yet — otherwise a valid-looking upload silently lands on channel_id
+  // null and the OTA endpoints can never serve it (see docs/05-cli-integration.md).
   let channelId: number | null = null
   const channelName = form.get('channel')
   const rawChannelId = form.get('channel_id')
   if (typeof channelName === 'string' && channelName !== '') {
-    const [channel] = await db
-      .select({ id: channels.id })
-      .from(channels)
-      .where(and(eq(channels.name, channelName), eq(channels.applicationId, application.id)))
-      .limit(1)
-    channelId = channel?.id ?? null
+    channelId = await resolveOrCreateChannelByName(db, application.id, channelName)
   } else if (typeof rawChannelId === 'string' && rawChannelId !== '') {
     const [channel] = await db
       .select({ id: channels.id })
       .from(channels)
       .where(and(eq(channels.id, Number(rawChannelId)), eq(channels.applicationId, application.id)))
       .limit(1)
-    channelId = channel?.id ?? null
+    if (!channel) {
+      throw new UploadError(422, 'The selected channel is invalid.')
+    }
+    channelId = channel.id
   }
 
   const uuid = crypto.randomUUID()
