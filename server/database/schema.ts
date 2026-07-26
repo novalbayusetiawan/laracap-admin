@@ -26,6 +26,8 @@ export const users = sqliteTable('users', {
   password: text('password').notNull(), // bcrypt hash (Laravel-compatible)
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
   isSuperadmin: integer('is_superadmin', { mode: 'boolean' }).notNull().default(false),
+  bio: text('bio'),
+  company: text('company'),
   rememberToken: text('remember_token'),
   ...timestamps,
 })

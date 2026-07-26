@@ -1,18 +1,36 @@
 <script setup lang="ts">
-import { Cpu, Key, LayoutGrid, LogOut, Radio, Settings, Smartphone, UserCircle, UserX } from 'lucide-vue-next'
+import { Cpu, Key, LayoutDashboard, LayoutGrid, LogOut, Radio, Settings, Smartphone, UserCircle, UserCog, UserX } from 'lucide-vue-next'
 
 const { user, clear, fetch: refreshSession } = useUserSession()
 const route = useRoute()
 
-const nav = computed(() => [
-  { label: 'Applications', to: '/admin/applications', icon: LayoutGrid },
-  { label: 'Bundles', to: '/admin/bundles', icon: Cpu },
-  { label: 'Channels', to: '/admin/channels', icon: Radio },
-  { label: 'Devices', to: '/admin/devices', icon: Smartphone },
-  ...(user.value?.isAdmin ? [{ label: 'Users', to: '/admin/users', icon: UserCircle }] : []),
-  { label: 'API Tokens', to: '/admin/settings/tokens', icon: Key },
-  ...(user.value?.isSuperadmin ? [{ label: 'Settings', to: '/admin/settings/general', icon: Settings }] : []),
+// Grouped nav: a "Main" section for day-to-day resources, a "Settings" section
+// for account/config. Superadmin-only and admin-only items appear conditionally.
+const sections = computed(() => [
+  {
+    label: 'Main',
+    items: [
+      { label: 'Dashboard', to: '/admin', icon: LayoutDashboard, exact: true },
+      { label: 'Applications', to: '/admin/applications', icon: LayoutGrid },
+      { label: 'Bundles', to: '/admin/bundles', icon: Cpu },
+      { label: 'Channels', to: '/admin/channels', icon: Radio },
+      { label: 'Devices', to: '/admin/devices', icon: Smartphone },
+      ...(user.value?.isAdmin ? [{ label: 'Users', to: '/admin/users', icon: UserCircle }] : []),
+    ],
+  },
+  {
+    label: 'Settings',
+    items: [
+      { label: 'Profile', to: '/admin/settings/profile', icon: UserCog },
+      { label: 'API Tokens', to: '/admin/settings/tokens', icon: Key },
+      ...(user.value?.isSuperadmin ? [{ label: 'General', to: '/admin/settings/general', icon: Settings }] : []),
+    ],
+  },
 ])
+
+function isActive(to: string, exact?: boolean) {
+  return exact ? route.path === to : route.path.startsWith(to)
+}
 
 async function logout() {
   await $fetch('/api/admin/logout', { method: 'POST' })
@@ -34,26 +52,38 @@ async function stopImpersonating() {
         <span class="flex h-7 w-7 items-center justify-center rounded bg-primary text-xs font-bold text-primary-foreground">LC</span>
         LaraCap
       </NuxtLink>
-      <nav class="flex-1 space-y-1 p-3">
-        <NuxtLink
-          v-for="item in nav"
-          :key="item.to"
-          :to="item.to"
-          class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-          :class="{ 'bg-accent text-accent-foreground': route.path.startsWith(item.to) }"
-        >
-          <component :is="item.icon" class="h-4 w-4" />
-          {{ item.label }}
-        </NuxtLink>
+      <nav class="flex-1 space-y-5 overflow-y-auto p-3">
+        <div v-for="section in sections" :key="section.label">
+          <p class="px-3 pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+            {{ section.label }}
+          </p>
+          <div class="space-y-1">
+            <NuxtLink
+              v-for="item in section.items"
+              :key="item.to"
+              :to="item.to"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              :class="{ 'bg-accent text-accent-foreground': isActive(item.to, item.exact) }"
+            >
+              <component :is="item.icon" class="h-4 w-4" />
+              {{ item.label }}
+            </NuxtLink>
+          </div>
+        </div>
       </nav>
       <div class="border-t p-3">
-        <div class="mb-2 px-3 text-sm">
-          <div class="flex items-center gap-1.5 font-medium">
-            {{ user?.name }}
-            <UiBadge v-if="user?.isSuperadmin" variant="default">super</UiBadge>
+        <NuxtLink
+          to="/admin/settings/profile"
+          class="mb-2 flex items-center gap-2 rounded-md px-3 py-1.5 text-sm hover:bg-accent"
+        >
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5 font-medium">
+              <span class="truncate">{{ user?.name }}</span>
+              <UiBadge v-if="user?.isSuperadmin" variant="default">super</UiBadge>
+            </div>
+            <div class="truncate text-xs text-muted-foreground">{{ user?.email }}</div>
           </div>
-          <div class="truncate text-xs text-muted-foreground">{{ user?.email }}</div>
-        </div>
+        </NuxtLink>
         <button
           class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           @click="logout"
@@ -78,5 +108,6 @@ async function stopImpersonating() {
         <slot />
       </main>
     </div>
+    <UiToaster />
   </div>
 </template>

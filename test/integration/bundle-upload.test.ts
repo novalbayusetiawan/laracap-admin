@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
@@ -49,10 +49,15 @@ let sqlite: Database.Database
 
 beforeEach(async () => {
   sqlite = new Database(':memory:')
-  const initSql = readFileSync(join(__dirname, '../../server/database/migrations/0000_init.sql'), 'utf8')
-  const settingsSql = readFileSync(join(__dirname, '../../server/database/migrations/0001_settings_superadmin.sql'), 'utf8')
+  // Apply ALL production migrations in order so the test schema always matches.
+  const migrationsDir = join(__dirname, '../../server/database/migrations')
+  const allSql = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort()
+    .map((f) => readFileSync(join(migrationsDir, f), 'utf8'))
+    .join('\n')
   // Drizzle migration files use `--> statement-breakpoint` between statements.
-  for (const chunk of `${initSql}\n${settingsSql}`.split('--> statement-breakpoint')) {
+  for (const chunk of allSql.split('--> statement-breakpoint')) {
     const stmt = chunk.replace(/^\s*-->.*$/gm, '').trim()
     if (stmt) sqlite.exec(stmt)
   }

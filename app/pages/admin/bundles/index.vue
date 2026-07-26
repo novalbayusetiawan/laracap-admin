@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { Plus, Trash2 } from 'lucide-vue-next'
+import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { formatBytes, formatDate } from '~/utils/ui'
+import { useToast } from '~/composables/useToast'
 
 definePageMeta({ middleware: 'admin-auth', layout: 'admin' })
 
 const { data: rows, refresh } = await useFetch('/api/admin/bundles')
+const { data: allChannels } = await useFetch('/api/admin/channels')
+const { success } = useToast()
 
 function constraints(b: any): string {
   const parts: string[] = []
@@ -19,6 +22,65 @@ async function remove(id: number) {
   if (!confirm('Delete this bundle? Devices on it will re-resolve on next check.')) return
   await $fetch(`/api/admin/bundles/${id}`, { method: 'DELETE' })
   await refresh()
+  success('Bundle deleted')
+}
+
+// ----- edit -----
+const showEdit = ref(false)
+const editId = ref<number | null>(null)
+const editAppId = ref<number | null>(null)
+const editForm = reactive({
+  name: '',
+  description: '',
+  channel_id: null as number | null,
+  android_min_version_code: '' as string | number,
+  android_max_version_code: '' as string | number,
+  android_eq_version_code: '' as string | number,
+  ios_min_version_code: '' as string | number,
+  ios_max_version_code: '' as string | number,
+  ios_eq_version_code: '' as string | number,
+})
+const editError = ref('')
+const editPending = ref(false)
+
+const channelOptions = computed(() => [
+  { value: null, label: '— No channel —' },
+  ...(allChannels.value ?? [])
+    .filter((c: any) => c.application_id === editAppId.value)
+    .map((c: any) => ({ value: c.id, label: c.name })),
+])
+
+function openEdit(b: any) {
+  editId.value = b.id
+  editAppId.value = b.application_id
+  Object.assign(editForm, {
+    name: b.name ?? '',
+    description: b.description ?? '',
+    channel_id: b.channel_id,
+    android_min_version_code: b.android_min_version_code ?? '',
+    android_max_version_code: b.android_max_version_code ?? '',
+    android_eq_version_code: b.android_eq_version_code ?? '',
+    ios_min_version_code: b.ios_min_version_code ?? '',
+    ios_max_version_code: b.ios_max_version_code ?? '',
+    ios_eq_version_code: b.ios_eq_version_code ?? '',
+  })
+  editError.value = ''
+  showEdit.value = true
+}
+
+async function saveEdit() {
+  editError.value = ''
+  editPending.value = true
+  try {
+    await $fetch(`/api/admin/bundles/${editId.value}`, { method: 'PATCH', body: editForm })
+    showEdit.value = false
+    await refresh()
+    success('Bundle updated')
+  } catch (e: any) {
+    editError.value = apiErrorMessage(e, 'Update failed')
+  } finally {
+    editPending.value = false
+  }
 }
 </script>
 
@@ -55,10 +117,15 @@ async function remove(id: number) {
             <td class="px-4 py-3">{{ formatBytes(b.size) }}</td>
             <td class="px-4 py-3 text-xs text-muted-foreground">{{ constraints(b) }}</td>
             <td class="px-4 py-3 text-muted-foreground">{{ formatDate(b.created_at) }}</td>
-            <td class="px-4 py-3 text-right">
-              <UiButton variant="ghost" size="icon" title="Delete" @click="remove(b.id)">
-                <Trash2 class="h-4 w-4 text-destructive" />
-              </UiButton>
+            <td class="px-4 py-3">
+              <div class="flex justify-end gap-1">
+                <UiButton variant="ghost" size="icon" title="Edit" @click="openEdit(b)">
+                  <Pencil class="h-4 w-4" />
+                </UiButton>
+                <UiButton variant="ghost" size="icon" title="Delete" @click="remove(b.id)">
+                  <Trash2 class="h-4 w-4 text-destructive" />
+                </UiButton>
+              </div>
             </td>
           </tr>
           <tr v-if="!rows?.length">
@@ -67,5 +134,33 @@ async function remove(id: number) {
         </tbody>
       </table>
     </div>
+
+    <UiDialog v-model:open="showEdit" title="Edit Bundle">
+      <form class="space-y-4" @submit.prevent="saveEdit">
+        <UiInput v-model="editForm.name" placeholder="Version / name" />
+        <UiInput v-model="editForm.description" placeholder="Description (optional)" />
+        <UiSelect v-model="editForm.channel_id" :options="channelOptions" placeholder="Channel" />
+        <div>
+          <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">Android version codes</p>
+          <div class="grid grid-cols-3 gap-2">
+            <UiInput v-model="editForm.android_min_version_code" type="number" placeholder="Min" />
+            <UiInput v-model="editForm.android_max_version_code" type="number" placeholder="Max" />
+            <UiInput v-model="editForm.android_eq_version_code" type="number" placeholder="Exact" />
+          </div>
+        </div>
+        <div>
+          <p class="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">iOS version codes</p>
+          <div class="grid grid-cols-3 gap-2">
+            <UiInput v-model="editForm.ios_min_version_code" type="number" placeholder="Min" />
+            <UiInput v-model="editForm.ios_max_version_code" type="number" placeholder="Max" />
+            <UiInput v-model="editForm.ios_eq_version_code" type="number" placeholder="Exact" />
+          </div>
+        </div>
+        <p v-if="editError" class="text-sm text-destructive">{{ editError }}</p>
+        <UiButton type="submit" class="w-full" :disabled="editPending">
+          {{ editPending ? 'Saving…' : 'Save changes' }}
+        </UiButton>
+      </form>
+    </UiDialog>
   </div>
 </template>

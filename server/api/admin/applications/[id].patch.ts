@@ -3,13 +3,16 @@ import { useDatabase } from '~~/server/database/client'
 import { applications } from '~~/server/database/schema'
 import { serializeApplication } from '~~/server/utils/serializers/application'
 import { requireSessionUser } from '~~/server/utils/session-auth'
-import { slugify, uniqueSlug } from '~~/server/utils/slug'
 
-/** POST /api/admin/applications — modal create (docs/06 §ApplicationResource). */
+/** PATCH /api/admin/applications/:id — edit name/description/bundle_limit. */
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
-  const body = await readBody<Record<string, unknown>>(event).catch(() => null)
+  const id = Number(getRouterParam(event, 'id'))
+  if (!Number.isInteger(id)) {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+  }
 
+  const body = await readBody<Record<string, unknown>>(event).catch(() => null)
   const name = typeof body?.name === 'string' ? body.name.trim() : ''
   const description = typeof body?.description === 'string' && body.description !== '' ? body.description : null
   const rawLimit = body?.bundle_limit
@@ -23,27 +26,16 @@ export default defineEventHandler(async (event) => {
   }
 
   const db = useDatabase(event)
-  // Slug is derived from the name (the public key is the uuid); guarantee uniqueness.
-  const slug = await uniqueSlug(slugify(name) || 'app', async (s) => {
-    const [row] = await db.select({ id: applications.id }).from(applications).where(eq(applications.slug, s)).limit(1)
-    return !!row
-  })
+  const [app] = await db.select().from(applications).where(eq(applications.id, id)).limit(1)
+  if (!app || (!user.isAdmin && app.userId !== user.id)) {
+    throw createError({ statusCode: 404, statusMessage: 'Not Found' })
+  }
 
-  const nowIso = new Date().toISOString()
-  const [created] = await db
-    .insert(applications)
-    .values({
-      uuid: crypto.randomUUID(),
-      name,
-      slug,
-      description,
-      bundleLimit,
-      userId: user.id,
-      createdAt: nowIso,
-      updatedAt: nowIso,
-    })
+  const [updated] = await db
+    .update(applications)
+    .set({ name, description, bundleLimit, updatedAt: new Date().toISOString() })
+    .where(eq(applications.id, id))
     .returning()
 
-  setResponseStatus(event, 201)
-  return serializeApplication(created!)
+  return serializeApplication(updated!)
 })

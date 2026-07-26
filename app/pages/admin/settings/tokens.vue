@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Copy, Plus, Trash2 } from 'lucide-vue-next'
+import { Copy, Plus, RefreshCw, Trash2 } from 'lucide-vue-next'
 import { formatDate } from '~/utils/ui'
+import { useToast } from '~/composables/useToast'
 
 definePageMeta({ middleware: 'admin-auth', layout: 'admin' })
 
 const { data: rows, refresh } = await useFetch('/api/admin/tokens')
 const { user } = useUserSession()
+const { success } = useToast()
 
 const showCreate = ref(false)
 const form = reactive({ name: '', expires_at: '' })
@@ -15,6 +17,7 @@ const pending = ref(false)
 // Show-once: plain token held only in this ref, cleared when dialog closes.
 const createdToken = ref('')
 const copied = ref(false)
+const dialogTitle = ref('Create API Token')
 
 async function create() {
   error.value = ''
@@ -34,21 +37,37 @@ async function create() {
   }
 }
 
+async function regenerate(t: any) {
+  if (!confirm(`Regenerate "${t.name}"? The current token stops working immediately — update any CI/CLI using it.`)) return
+  try {
+    const res = await $fetch<{ token: string }>(`/api/admin/tokens/${t.id}/regenerate`, { method: 'POST' })
+    dialogTitle.value = 'Token Regenerated'
+    createdToken.value = res.token
+    showCreate.value = true
+    await refresh()
+  } catch (e: any) {
+    alert(apiErrorMessage(e, 'Regenerate failed'))
+  }
+}
+
 async function copyToken() {
   await navigator.clipboard.writeText(createdToken.value)
   copied.value = true
+  success('Token copied to clipboard')
   setTimeout(() => (copied.value = false), 1500)
 }
 
 function closeCreate() {
   showCreate.value = false
   createdToken.value = ''
+  dialogTitle.value = 'Create API Token'
 }
 
 async function revoke(id: number) {
   if (!confirm('Revoke this token? CLI clients using it will stop working immediately.')) return
   await $fetch(`/api/admin/tokens/${id}`, { method: 'DELETE' })
   await refresh()
+  success('Token revoked')
 }
 </script>
 
@@ -84,10 +103,15 @@ async function revoke(id: number) {
               <span v-else-if="t.expires_at" class="text-muted-foreground">{{ formatDate(t.expires_at) }}</span>
               <UiBadge v-else variant="muted">Never</UiBadge>
             </td>
-            <td class="px-4 py-3 text-right">
-              <UiButton variant="ghost" size="icon" title="Revoke" @click="revoke(t.id)">
-                <Trash2 class="h-4 w-4 text-destructive" />
-              </UiButton>
+            <td class="px-4 py-3">
+              <div class="flex justify-end gap-1">
+                <UiButton variant="ghost" size="icon" title="Regenerate (shows a new token value)" @click="regenerate(t)">
+                  <RefreshCw class="h-4 w-4" />
+                </UiButton>
+                <UiButton variant="ghost" size="icon" title="Revoke" @click="revoke(t.id)">
+                  <Trash2 class="h-4 w-4 text-destructive" />
+                </UiButton>
+              </div>
             </td>
           </tr>
           <tr v-if="!rows?.length">
@@ -99,7 +123,7 @@ async function revoke(id: number) {
       </table>
     </div>
 
-    <UiDialog :open="showCreate" title="Create API Token" @update:open="closeCreate">
+    <UiDialog :open="showCreate" :title="dialogTitle" @update:open="closeCreate">
       <!-- Step 2: show-once token reveal -->
       <div v-if="createdToken" class="space-y-4">
         <p class="text-sm text-muted-foreground">

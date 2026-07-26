@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Plus, Trash2 } from 'lucide-vue-next'
+import { Pencil, Plus, Trash2 } from 'lucide-vue-next'
 import { formatDate } from '~/utils/ui'
+import { useToast } from '~/composables/useToast'
 
 definePageMeta({ middleware: 'admin-auth', layout: 'admin' })
 
 const { data: rows, refresh } = await useFetch('/api/admin/channels')
 const { data: apps } = await useFetch('/api/admin/applications')
+const { success } = useToast()
 
 const showCreate = ref(false)
 const form = reactive({ name: '', application_id: null as number | null })
@@ -22,6 +24,7 @@ async function create() {
     showCreate.value = false
     Object.assign(form, { name: '', application_id: null })
     await refresh()
+    success('Channel created')
   } catch (e: any) {
     error.value = apiErrorMessage(e, 'Create failed')
   } finally {
@@ -29,10 +32,40 @@ async function create() {
   }
 }
 
+// ----- edit -----
+const showEdit = ref(false)
+const editId = ref<number | null>(null)
+const editForm = reactive({ name: '' })
+const editError = ref('')
+const editPending = ref(false)
+
+function openEdit(c: any) {
+  editId.value = c.id
+  editForm.name = c.name
+  editError.value = ''
+  showEdit.value = true
+}
+
+async function saveEdit() {
+  editError.value = ''
+  editPending.value = true
+  try {
+    await $fetch(`/api/admin/channels/${editId.value}`, { method: 'PATCH', body: editForm })
+    showEdit.value = false
+    await refresh()
+    success('Channel updated')
+  } catch (e: any) {
+    editError.value = apiErrorMessage(e, 'Update failed')
+  } finally {
+    editPending.value = false
+  }
+}
+
 async function remove(id: number) {
   if (!confirm('Delete this channel? Its bundles will become unassigned.')) return
   await $fetch(`/api/admin/channels/${id}`, { method: 'DELETE' })
   await refresh()
+  success('Channel deleted')
 }
 </script>
 
@@ -62,10 +95,15 @@ async function remove(id: number) {
             <td class="px-4 py-3 text-muted-foreground">{{ c.application_name }}</td>
             <td class="px-4 py-3"><UiBadge variant="info">{{ c.bundles_count }}</UiBadge></td>
             <td class="px-4 py-3 text-muted-foreground">{{ formatDate(c.created_at) }}</td>
-            <td class="px-4 py-3 text-right">
-              <UiButton variant="ghost" size="icon" title="Delete" @click="remove(c.id)">
-                <Trash2 class="h-4 w-4 text-destructive" />
-              </UiButton>
+            <td class="px-4 py-3">
+              <div class="flex justify-end gap-1">
+                <UiButton variant="ghost" size="icon" title="Edit" @click="openEdit(c)">
+                  <Pencil class="h-4 w-4" />
+                </UiButton>
+                <UiButton variant="ghost" size="icon" title="Delete" @click="remove(c.id)">
+                  <Trash2 class="h-4 w-4 text-destructive" />
+                </UiButton>
+              </div>
             </td>
           </tr>
           <tr v-if="!rows?.length">
@@ -82,6 +120,15 @@ async function remove(id: number) {
         <p v-if="error" class="text-sm text-destructive">{{ error }}</p>
         <UiButton type="submit" class="w-full" :disabled="pending">
           {{ pending ? 'Creating…' : 'Create' }}
+        </UiButton>
+      </form>
+    </UiDialog>
+    <UiDialog v-model:open="showEdit" title="Edit Channel">
+      <form class="space-y-4" @submit.prevent="saveEdit">
+        <UiInput v-model="editForm.name" placeholder="Channel name" required />
+        <p v-if="editError" class="text-sm text-destructive">{{ editError }}</p>
+        <UiButton type="submit" class="w-full" :disabled="editPending">
+          {{ editPending ? 'Saving…' : 'Save changes' }}
         </UiButton>
       </form>
     </UiDialog>
