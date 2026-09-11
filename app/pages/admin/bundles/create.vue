@@ -79,7 +79,7 @@ async function submit() {
           class="w-full rounded-md border border-dashed border-input p-4 text-sm"
           @change="onFile"
         >
-        <p class="mt-1 text-xs text-muted-foreground">Bundle ZIP, max 10 MB.</p>
+        <p class="mt-1 text-xs text-muted-foreground">Bundle ZIP, max 50 MB.</p>
       </div>
 
       <fieldset class="rounded-lg border p-4">

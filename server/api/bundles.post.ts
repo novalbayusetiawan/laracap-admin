@@ -4,6 +4,7 @@ import { applications, bundles } from '~~/server/database/schema'
 import { createBundle } from '~~/server/services/bundle-upload'
 import { requireBearerUser } from '~~/server/utils/bearer-auth'
 import { serializeBundle } from '~~/server/utils/serializers/bundle'
+import { MAX_BUNDLE_UPLOAD_BYTES, MAX_BUNDLE_UPLOAD_MESSAGE } from '~~/server/utils/bundle-upload-limits'
 import { isUuid } from '~~/server/utils/validation'
 
 /**
@@ -15,8 +16,6 @@ import { isUuid } from '~~/server/utils/validation'
  *  - exact 403 message strings
  */
 
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024 // 10 MB (Filament parity)
-
 export default defineEventHandler(async (event) => {
   const user = await requireBearerUser(event)
   const db = useDatabase(event)
@@ -27,8 +26,8 @@ export default defineEventHandler(async (event) => {
   if (!form || !(file instanceof File) || typeof rawAppId !== 'string' || rawAppId === '') {
     throw createError({ statusCode: 422, statusMessage: 'The given data was invalid.' })
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw createError({ statusCode: 422, statusMessage: 'The file may not be greater than 10 MB.' })
+  if (file.size > MAX_BUNDLE_UPLOAD_BYTES) {
+    throw createError({ statusCode: 422, statusMessage: MAX_BUNDLE_UPLOAD_MESSAGE })
   }
 
   const [application] = await db

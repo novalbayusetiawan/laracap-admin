@@ -3,6 +3,7 @@ import { useDatabase } from '~~/server/database/client'
 import { applications } from '~~/server/database/schema'
 import { createBundle } from '~~/server/services/bundle-upload'
 import { serializeBundle } from '~~/server/utils/serializers/bundle'
+import { MAX_BUNDLE_UPLOAD_BYTES, MAX_BUNDLE_UPLOAD_MESSAGE } from '~~/server/utils/bundle-upload-limits'
 import { requireSessionUser } from '~~/server/utils/session-auth'
 
 /**
@@ -10,7 +11,6 @@ import { requireSessionUser } from '~~/server/utils/session-auth'
  * Quirk parity: application dropdown is scoped to the auth user even for admins,
  * so ownership is enforced here for everyone.
  */
-const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 export default defineEventHandler(async (event) => {
   const user = await requireSessionUser(event)
@@ -23,8 +23,8 @@ export default defineEventHandler(async (event) => {
   if (!form || !(file instanceof File) || typeof rawAppId !== 'string' || rawAppId === '' || typeof name !== 'string' || !name) {
     throw createError({ statusCode: 422, statusMessage: 'The given data was invalid.' })
   }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw createError({ statusCode: 422, statusMessage: 'The file may not be greater than 10 MB.' })
+  if (file.size > MAX_BUNDLE_UPLOAD_BYTES) {
+    throw createError({ statusCode: 422, statusMessage: MAX_BUNDLE_UPLOAD_MESSAGE })
   }
 
   const [application] = await db
